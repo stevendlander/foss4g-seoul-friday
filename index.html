@@ -1,0 +1,464 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <title>
+            Building Continuous Integration within your open source
+            project
+        </title>
+
+        <link rel="stylesheet"
+              href="libs/reveal.js-3.1.0/css/reveal.css">
+        <link rel="stylesheet"
+              href="libs/reveal.js-3.1.0/css/theme/solarized.css"
+              id="theme">
+        <link rel="stylesheet"
+              href="libs/reveal.js-3.1.0/lib/css/zenburn.css"
+              id="theme">
+        <script>
+            if(window.location.search.match(/print-pdf/gi))
+            {
+                var link = document.createElement('link');
+                link.rel = 'stylesheet';
+                link.type = 'text/css';
+                link.href = 'libs/reveal.js-3.1.0/css/print/pdf.css';
+                document.getElementsByTagName('head')[0].appendChild(link);
+            }
+        </script>
+        <style>
+            #cssTable th
+            {
+                text-align: center;
+                vertical-align: middle;
+            }
+            #cssTable td
+            {
+                text-align: center;
+                vertical-align: middle;
+            }
+        </style>
+    </head>
+
+    <body>
+        <div class="reveal">
+            <div class="slides">
+                <section data-markdown data-separator="---" id="intro">
+                    <script type="text/template">
+                        #FOSS4G Seoul 2015
+                        Building Continuous Integration within your
+                        open source project
+                        ####By Steven D. Lander, RG<span style="text-transform: lowercase;">i</span> <sup>&#174;</sup>
+                        ---
+                        #About me
+
+                        * https://github.com/stevendlander
+                        * Software Engineer @ [RGi](http://rgi-corp.com/)
+                        * Experienced in caching and storing large raster images
+                        * Early implementer of the [OGC GeoPackage](http://www.opengeospatial.org/standards/geopackage) specification
+                        * Work in Java, Android, Python, and some others
+                        ---
+                        #About our projects
+
+                        * [Software to Aggregate Geospatial Data (SWAGD)](https://github.com/GitHubRGI/swagd)
+                            * Full implementation of the GeoPackage raster spec
+                            * Java 1.8
+                            * Uses GDAL 1.11.1
+                        * [geopackage-python](https://github.com/GitHubRGI/geopackage-python)
+                            * Na&#239;ve implementation of the GeoPackage raster spec
+                            * Python 2.7 & 3.4
+                            * Improvements to gdal2tiles.py along with separate script to package tiles
+                        ---
+                        ##Other presentations at FOSS4G Seoul
+
+                        * <em>Geopackage and how open source is changing the way
+                          governments think about standards</em>
+                          * (2015/09/16) Nathan Frantz, Ben Tuttle, 11:25
+                          PT1-05
+
+                        * <em>OGC GeoPackage in practice: Implementing a new
+                          OGC specification with open source tools</em>
+                          * (2015/09/17) Steven Lander, 11:25 PT4-08
+                    </script>
+                </section>
+
+                <section data-markdown data-separator="---" id="overview">
+                    <script type="text/template">
+                    ##At a glance
+
+                    * Why do we need CI?  What is the problem?
+                    * How do we solve those problems?
+                    * Our best practices for implementing CI within an open
+                    source project
+                    </script>
+                </section>
+
+                <section data-markdown data-separator="---" id="problems">
+                    <script type="text/template">
+                        ##The problem
+
+                        (broadly)
+                        ---
+                        ##Modern build systems are complicated
+
+                        * Build framework
+                        * Dependencies
+                        * Testing
+                        * Installers?
+
+                        Note:
+                        Mention maven, jars, windows, android, etc
+                        ---
+                        ##Human factors
+
+                        * Typing and logic errors
+                        * Poor understanding of code impacts
+                        * Improper software development practices
+
+                        Note:
+                        Humans perform poorly at repetitive tasks. Reducing the
+                        amount of steps in a process someone must go through
+                        will increase the likelyhood they will do it.
+                        ---
+                        <img data-src="resources/tooAgile.png" style="border:none; background:none; box-shadow:none;">
+                        ######Source: http://build-doctor.com/2008/11/22/too-agile/
+                        ---
+                        ##Regressions
+
+                        * Side effects of development or refactoring
+                        * A change to **Area A** breaks functionality in **Area B**
+                        * Elimination of resources necessary in other areas
+
+                        Note:
+                        Regression testing is a crucial part of a build system.
+                        You must be certain that you are not introducing more bugs.
+                        ---
+                        ##Barriers
+
+                        * Too many login credentials to manage
+                        * **The Right Process<sup>&#8482;</sup>** is onerous to follow
+                        * Manual steps where automation makes more sense
+                        ---
+                        ##Self-hosted resources
+
+                        * Require administration (patches, updates, etc.)
+                        * Downtimes and scheduled maintenance
+                        * Access outside of intranet
+                    </script>
+                </section>
+
+                <section data-markdown data-separator="---" id="freetools">
+                    <script type="text/template">
+                        ##Our CI solution
+                        ---
+                        ##Many zero-cost tools for being open source!
+
+                        * [Travis-CI](https://travis-ci.com/plans) - build
+                        automation
+                        * [Scrutinizer](https://scrutinizer-ci.com/) -
+                        build automation, code quality analysis
+                        * [WaffleIO](https://waffle.io/) - issue management
+                        * [Coveralls](https://coveralls.io/repos) - unit
+                        test coverage
+                        * [Coverity](http://www.coverity.com/) - static
+                        analysis
+                        ---
+                        ##Other CI tools & approaches
+
+                        * IDE (Eclipse, IntelliJ, PyCharm)
+                            * Enforce rigorous code standards and common syntax
+                            convention
+                        * Design reviews
+                        * Code reviews
+                    </script>
+                </section>
+
+                <section id="mitigations">
+                    <h2>Mitigation</h2>
+                    <table class="reveal" id="cssTable">
+                        <thead>
+                            <tr>
+                                <th></th>
+                                <th>complicated build system</th>
+                                <th>human factors</th>
+                                <th>regression</th>
+                                <th>barriers</th>
+                                <th>self-hosted</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Source control</td>
+                                <td>&#x2713;</td>
+                                <td></td>
+                                <td>&#x2713;</td>
+                                <td>&#x2713;</td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td>IDE</td>
+                                <td></td>
+                                <td>&#x2713;</td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td>Testing</td>
+                                <td></td>
+                                <td>&#x2713;</td>
+                                <td>&#x2713;</td>
+                                <td></td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td>Services</td>
+                                <td>&#x2713;</td>
+                                <td>&#x2713;</td>
+                                <td>&#x2713;</td>
+                                <td>&#x2713;</td>
+                                <td>&#x2713;</td>
+                            </tr>
+                            <tr>
+                                <td>Static analysis</td>
+                                <td></td>
+                                <td>&#x2713;</td>
+                                <td>&#x2713;</td>
+                                <td></td>
+                                <td></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </section>
+
+
+                <section id="comparison">
+                    <h2>Service comparison</h2>
+                    <table class="reveal" id="cssTable">
+                        <thead>
+                            <tr>
+                                <th></th>
+                                <th>build process</th>
+                                <th>code quality</th>
+                                <th>static analysis</th>
+                                <th>issue mgmt</th>
+                                <th>test coverage</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Travis-CI</td>
+                                <td>&#x2713;</td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td>Scrutinizer</td>
+                                <td>&#x2713;</td>
+                                <td>&#x2713;</td>
+                                <td></td>
+                                <td></td>
+                                <td>&#x2713;</td>
+                            </tr>
+                            <tr>
+                                <td>Coveralls</td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td>&#x2713;</td>
+                            </tr>
+                            <tr>
+                                <td>Coverity</td>
+                                <td></td>
+                                <td></td>
+                                <td>&#x2713;</td>
+                                <td></td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td>WaffleIO</td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td>&#x2713;</td>
+                                <td></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </section>
+
+                <section data-markdown data-separator="---" id="toolspecifics">
+                    <script type="text/template">
+                        ##Travis-CI
+
+                        * Simple workflow:
+                            * Install your dependencies (script or local)
+                            * Test if your code compiles
+                            * Run your test suite
+                            * Create a code coverage report from your test
+                            suite
+                            * Submit your coverage report to a service
+                        ---
+                        ##.travis.yml (for Java)
+
+                        ```
+                        language: java
+                        jdk:
+                            - oraclejdk8
+                        install:
+                            - ./install-deps-linux.sh
+                            - mvn test-compile -DskipTests=true -Dmaven.javadoc.skip=true -B -V
+                        script:
+                            - mvn test
+                        after_success:
+                            - mvn clean cobertura:cobertura coveralls:report
+                        cache:
+                            directories:
+                                - $HOME/.m2
+                        ```
+                        ---
+                        ##.travis.yml (for Python)
+
+                        ```
+                        language: python
+                        python:
+                            - "2.7"
+                            - "3.4"
+                        install:
+                            - pip install -r dependencies.txt
+                            - pip install coveralls
+                        script:
+                            - py.test Testing/test_tiles2gpkg.py --doctest-modules -v --cov Packaging --cov-report term-missing
+                        after_success:
+                            - coveralls
+                        ```
+                        ---
+                        ##Scrutinizer
+
+                        * Point the service to your open source repo
+                        * Optionally configure how to run the test suite
+                        ---
+                        ##Waffle.IO
+
+                        * Tracks [Github issues](https://waffle.io/GitHubRGI/geopackage-python) in a friendly interface
+                        * Customizable "swim lanes" track issues for the team
+                        * Can aggregate [multiple](https://waffle.io/githubrgi/swagd) Waffle boards into a single view
+                        ---
+                        ##Coveralls
+
+                        * Code-coverage report [visualization and tracking](https://coveralls.io/github/GitHubRGI/geopackage-python)
+                        * Will post to Github about the impact a pull request will have upon code coverage
+                        ---
+                        ##Coverity
+
+                        * Keep a separate branch to limit requests to service
+                        * Can track defects introduced and ones that are still
+                        unaddressed
+                    </script>
+                </section>
+
+                <section data-markdown data-separator="---" id="solutions">
+                    <script type="text/template">
+                        ##Our best practices for implementing CI within an open source project
+                        ---
+                        ##Your integrated dev environment (IDE)
+
+                        * First line of defense
+                            * Share your [code inspection](https://github.com/GitHubRGI/swagd/blob/master/.idea/inspectionProfiles/SWAGD.xml) files in VCS
+                            * Text editor plugins (JSLint/Hint, pylint, etc)
+                            * Custom builders tailored to your workflow
+                        ---
+                        ##Effective use of Github
+
+                        * Do **not** commit to master; commit to a branch
+                        * Issue pull requests from branches:
+                            * Easy code reviews
+                            * Travis will tell you if **a) the push** or **b) the merge** will break
+                        * Use
+                        [labels](https://github.com/GitHubRGI/swagd/labels),
+                        [releases](https://github.com/GitHubRGI/geopackage-python/releases),
+                        and [milestones](https://github.com/GitHubRGI/swagd/milestones?state=open)
+                        ---
+                        ##Testing
+
+                        * Unit test
+                            * As much as you can (goal = 100%)
+                            * Exclude code that is impractical or impossible to test
+                        * Integration test
+                            * Reach across code to other systems (database, web, etc)
+                            * Clean up after themselves
+                        * Acceptance test
+                            * Simulate a user or a workflow
+                            * Check for logic issues
+                            * [Robot Framework](http://robotframework.org/)
+                        ---
+                        ##Code coverage report
+
+                        * Set a threshold for a failed build if test coverage drops below an acceptable level
+                        * Use as a guide for future test case creation
+                        ---
+                        ##Static analysis
+
+                        * Catch bad coding practices early
+                        * Discover logical errors
+                        * Either as an IDE plugin (Findbugs) or a service (Coverity)
+                        * Different analyzers can catch different bugs
+                        ---
+                        ##Documentation and Wiki
+
+                        * Github [wiki](https://github.com/GitHubRGI/swagd/wiki)
+                        * Markdown files [per folder](https://github.com/GitHubRGI/swagd/tree/master/WiX)
+                        * Or, just [documentation only](https://github.com/opengeospatial/geopackage)
+                    </script>
+                </section>
+
+                <section data-markdown data-separator="---" id="challenges">
+                    <script type="text/template">
+                        ##Summary
+
+                        * Build systems can be quite complicated
+                        * Open source software gets solid tools for **no cost**
+                        * Follow good CI practices
+                        ---
+                        ##Questions?
+                    </script>
+                </section>
+
+                <section data-markdown data-separator="---" id="closing">
+                    <script type="text/template">
+                        ##Thanks
+                        <img data-src="resources/smiley.png" style="border:none; background:none; box-shadow:none;">
+                    </script>
+                </section>
+            </div>
+        </div>
+
+        <script src="libs/reveal.js-3.1.0/lib/js/head.min.js"></script>
+        <script src="libs/reveal.js-3.1.0/js/reveal.js"></script>
+
+        <script>
+
+            var deps = [
+                    { src: 'libs/reveal.js-3.1.0/lib/js/classList.js', condition: function() { return !document.body.classList; } },
+                    { src: 'libs/reveal.js-3.1.0/plugin/markdown/marked.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+                    { src: 'libs/reveal.js-3.1.0/plugin/markdown/markdown.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+                    { src: 'libs/reveal.js-3.1.0/plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } },
+                    { src: 'libs/reveal.js-3.1.0/plugin/notes/notes.js' }
+            ];
+
+            var defaultOptions = {
+                controls: true,
+                progress: true,
+                history: true,
+                center: true,
+                transition: 'convex',
+                dependencies: deps,
+                slideNumber: true
+            };
+
+            Reveal.initialize(defaultOptions);
+        </script>
+    </body>
+</html>
